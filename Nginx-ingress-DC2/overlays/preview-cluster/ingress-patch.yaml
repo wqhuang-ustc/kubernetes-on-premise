@@ -1,0 +1,51 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: ingress-nginx-dc2
+  labels:
+    app.kubernetes.io/name: ingress-nginx-dc2
+    app.kubernetes.io/part-of: ingress-nginx-dc2
+spec:
+  loadBalancerIP: 192.168.2.20
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: example-ingress-dc2
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # removes any restriction on upload size
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    
+spec:
+  tls:
+  - secretName: example-adtoox-com-tls 
+    hosts: 
+    - "*.example.com"
+    
+  rules:
+    - host: service1-preview.example.com
+      http:
+        paths:
+          - backend:
+              serviceName: service1
+              servicePort: 5601
+    - host: teamdemo-service2-preview.example.com
+      http:
+        paths:
+          - path: /endpoint1
+            backend:
+              serviceName: example-service1
+              servicePort: 80
+          - path: /endpoint2
+            backend:
+              serviceName: example-service2
+              servicePort: 80
+
+ 

@@ -7,7 +7,11 @@ Kubespray is a composition of Ansible playbooks, inventory, provisioning tools, 
 * Composable attributes(Choice of the network plugin for instance)
 * Support for most popular Linux distributions
 
-Kubespray can run on bare metal and most cloud, which is great if we need to have a hybrid cloud environment to deploy some applications on the public cloud.This project will walk through the steps it takes to launch a Kubernetes cluster from bate metal, including the issue that might come up during the setup.
+Kubespray can run on bare metal and most cloud, which is great if we need to have a hybrid cloud environment to deploy some applications on the public cloud.This project will walk through the steps it takes to launch a Kubernetes cluster from bate metal, including the issue that might come up during the setup.     
+In the end, you will have:
+1. A highly available Kubernetes cluster deployed across multiple Data Centers
+2. One Nginx-Ingress-Controller in each Data Center to prevent Single DC failure.
+3. MetalLB to provide you LoadBalancer service for exposing your application.
 
 
 
@@ -171,3 +175,35 @@ The major advantage of the layer 2 mode is its universality: it will work on any
 First, modify the layer2-config.yaml file to specify the address-pools for MetalLB to allocate. Later, we can request an IP address from one address-pool by defining Kubernetes "LoadBalancer" type service.
 
 Then, run `kubectl apply -k /path/to/metallb/overlays/your-layer/` to install the MetalLB.
+
+## Nginx Ingress Controller
+
+In Kubernetes, an Ingress is an object that allows access to your Kubernetes services from outside the Kubernetes cluster. You configure access by creating a collection of rules that define which inbound connections reach which services. Ingress can provide load balancing, SSL termination and name-based virtual hosting.
+
+Below is a simple example where an Ingress sends trafic to one Service:
+
+![Ingress-example](docs/images/ingress.png)
+
+To prevent single Data Center failure, I implement 2 sets of Nginx-ingress controller deployment manifests to deploy Ingress controller in 2 datacenters for the preview Kubernetes cluster. When one DC is down due to, for example, power outage, the remaining Data Center will continue to serve the customers. And the switch of Data Center will happened automatically. To make the switch automatically happened, you need to configure below options:
+1. Enable DNS load balancing to distribute requests to the domain across a group of Nginx-Ingress-controller in different DC.
+2. The Kubernetes applications should be configured to recheduled to other Data Center if its current DC is down. This can be achieved by advanced node-affinity.
+
+Run below commands to deploy them.
+
+```
+kubectl apply -k Nginx-ingress-DC1/overlays/preview-cluster
+kubectl apply -k Nginx-ingress-DC2/overlays/preview-cluster
+```
+
+The example above only presents the way to deploy the [Nginx-ingress-controller](https://kubernetes.github.io/ingress-nginx/) in 2 datacenters for the preview kubernetes cluster. You can easily duplicate them and modify accordingly to create Nginx-Ingress-controller in multiple datacenters for stage/productiion Kubernetes cluster. 
+
+If https is enabled in the Nginx-Ingress_controller, you should create a tls-secret for the  TLS termination.
+
+The default configuration watches Ingress object from all namespaces. To change this behavior, use the flag --watch-namespace in the Deployment manifests to limit the scope to a particular namespace.
+
+Since we are running the Ingress on bare-metal cluster, where load balancers are not available on-demand, we will use the MetalLB created in above section to allow the usage of LoadBalancer Service for exposing Nginx-Ingress to the public. For Ingress in different datacenters, we define a pool of IP addresses for each datacenters in layer2-config.yaml.
+
+
+## Deploy your first application in the Kubernetes on premise
+
+With above steps done, this Kubernetes cluster is ready to run your applicaton and expose it to the Internet via Nginx-Ingress-Controller. If you don't have a exmaple application to run on this cluster, you can use the [Hello-world-deployment](https://github.com/wqhuang-ustc/Hello-world-deployment) as a reference. It is a demo project to show how to Jenkins CI&CD to build your docker image and deploy into a Kubernetes automatically.

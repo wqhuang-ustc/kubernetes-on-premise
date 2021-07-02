@@ -1,0 +1,8 @@
+namespace: example-ns
+resources:
+- mandatory.yaml
+- ingress-service.yaml
+- ingress.yaml
+commonLabels:
+  variant: base
+  app: express-ingress-dc1

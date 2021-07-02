@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller-dc1
+  namespace: example
+  labels:
+    app.kubernetes.io/name: ingress-nginx-dc1
+    app.kubernetes.io/part-of: ingress-nginx-dc1
+spec:
+  template:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: datacenter
+                operator: In
+                values:
+                - dc1

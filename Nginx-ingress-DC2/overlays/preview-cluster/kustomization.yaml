@@ -1,0 +1,8 @@
+namespace: example-ns
+bases:
+- ../../base
+commonLabels:
+  variant: preview-cluster
+patchesStrategicMerge:
+- node-affinity.yaml
+- patch.yaml
