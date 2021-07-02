@@ -14,7 +14,7 @@ Kubespray can run on bare metal and most cloud, which is great if we need to hav
 ## Prerequisites
 
 ### To be able to launch a cluster using Kubespray, there are some requirements to be satisfied:
-* Network requirement for Kubernetes over datacenters: Add permission of GRE permission in the firewall.
+* Network requirement for Kubernetes over datacenters: Add permission of GRE permission in the firewall and add route/vpn to connect datacenters.
 * A block of free IP addresses that will be assigned to VMs and MetalLB.
 - Hardware requirements:
   - Minimum requirement[https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/]
@@ -34,7 +34,7 @@ The firewalls are not managed on VMs, you'll need to implement your own rules th
 * While creating Kubernetes cluster in the private cloud across multiple data centers, make sure VMs can communicate with each other on different data centers.
 If Kubespray is running from a non-root user account, correct privilege escalation method should be configured in the target servers. Then the ansible_become flag or command parameters --become or -b should be specified.
 
-## Launch KUbernetes via Kubespray
+## Launch Kubernetes via Kubespray
 
 We will useanother machine as the Ansible contrl machine to launch the cluster among the nodes for the k8s cluster.
 1. **Install [python/python3](https://linuxize.com/post/how-to-install-python-3-7-on-ubuntu-18-04/) and [pip/pip3](https://linuxize.com/post/how-to-install-pip-on-ubuntu-18.04/) in the Ansible control machine.**
@@ -154,3 +154,20 @@ We will useanother machine as the Ansible contrl machine to launch the cluster a
     - [Adding/replacing a node](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/nodes.md)
     - [Upgrading Kubernetes cluster version](https://github.com/kubernetes-sigs/kubespray/blob/master/docs/upgrades.md)
 
+## Install MetalLB to provide load-balancer implementation
+
+[MetalLB](https://metallb.universe.tf/concepts/) hooks into your Kubernetes cluster, and provides a network load-balancer implementation. In short, it allows you to create Kubernetes services of type “LoadBalancer” in clusters that don’t run on a cloud provider, and thus cannot simply hook into paid products to provide load-balancers.  
+
+In the internal private network, we allocate internal IP addresses to LoadBalancer then associate the internal IP addresses with available public IPv4 addresses by port forwarding in the firewall to expose it to public.
+
+An example manifest to deploy and configure MetalLB is located in kubernetes-on-premise/MetalLB directory. I use [kustomize](https://kustomize.io/), a Kubernetes native templating management tool, to manage Kubernetes deployment files. Take a look at kustomize and understand its base and overlay concepts before moving to the next part.
+
+We will use MetalLB in layer 2 mode. In layer 2 mode, one node assumes the responsibility of advertising a service to the local network. From the network’s perspective, it simply looks like that machine has multiple IP addresses assigned to its network interface.
+
+Under the hood, MetalLB responds to ARP requests for IPv4 services, and NDP requests for IPv6.
+
+The major advantage of the layer 2 mode is its universality: it will work on any ethernet network, with no special hardware required, not even fancy routers.
+
+First, modify the layer2-config.yaml file to specify the address-pools for MetalLB to allocate. Later, we can request an IP address from one address-pool by defining Kubernetes "LoadBalancer" type service.
+
+Then, run `kubectl apply -k /path/to/metallb/overlays/your-layer/` to install the MetalLB.

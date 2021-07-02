@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: datacenter1-ip
+      protocol: layer2
+      addresses:
+      - 192.168.1.23-192.168.1.25
+    - name: datacenter2-ip
+      protocol: layer2
+      addresses:
+      - 192.168.2.23-192.168.1.25
+    - name: datacenter3-ip
+      protocol: layer2
+      addresses:
+      - 192.168.3.23-192.168.1.25

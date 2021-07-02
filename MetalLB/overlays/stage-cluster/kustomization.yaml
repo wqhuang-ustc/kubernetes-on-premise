@@ -1,0 +1,15 @@
+namespace: metallb-system
+bases:
+- ../../base
+commonLabels:
+  variant: stage
+patchesStrategicMerge:
+- layer2-config.yaml
+# # On first install only
+# kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+secretGenerator:
+- name: memberlist
+  files:
+  - configs/secretkey
+generatorOptions:
+ disableNameSuffixHash: true
