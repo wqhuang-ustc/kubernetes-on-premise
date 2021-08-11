@@ -40,7 +40,7 @@ If Kubespray is running from a non-root user account, correct privilege escalati
 
 ## Launch Kubernetes via Kubespray
 
-We will useanother machine as the Ansible contrl machine to launch the cluster among the nodes for the k8s cluster.
+We will use another machine as the Ansible contrl machine to launch the cluster among the nodes for the k8s cluster.
 1. **Install [python/python3](https://linuxize.com/post/how-to-install-python-3-7-on-ubuntu-18-04/) and [pip/pip3](https://linuxize.com/post/how-to-install-pip-on-ubuntu-18.04/) in the Ansible control machine.**
 2. **CLone the Kubespray git repository into the control machine.**
     ```
